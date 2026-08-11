@@ -1,12 +1,12 @@
 # Clippy Desktop Pet
 
-A desktop pet based on the **official Office 2003 Clippy assets**: water/exercise reminders, Pomodoro timer, global hotkey animations, and 10 official character skins. All animations are frame-by-frame reproductions of the originals with natural transitions.
+A desktop pet based on official assistant assets from **Office 2003 and Microsoft Bob**: water/exercise reminders, Pomodoro timer, global hotkey animations, and 10 official character skins. All animations are frame-by-frame reproductions of the originals with natural transitions.
 
 > [简体中文](README.md) | English
 
 ## 🤖 Development Note
 
-This project was generated and iteratively maintained with the **DeepSeek V4 Flash (0731) video coding** model.
+This project uses **DeepSeekV4-Flash-0731** for vibe coding.
 
 ## ✨ Features
 
