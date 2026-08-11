@@ -1,12 +1,12 @@
 # Clippy 桌面宠物
 
-基于 **Office 2003 回形针助手（Clippy）官方素材**的桌面宠物：喝水/锻炼提醒、番茄钟、全局快捷键动画、10 款官方角色换肤。所有动画逐帧还原原版，动作自然衔接。
+基于 **Office 2003 和 Microsoft Bob 中官方素材**的桌面宠物：喝水/锻炼提醒、番茄钟、全局快捷键动画、10 款官方角色换肤。所有动画逐帧还原原版，动作自然衔接。
 
 > [English](README.en.md) | 简体中文
 
 ## 🤖 开发说明
 
-本项目由 **DeepSeek V4 Flash（0731）video coding** 模型生成与迭代维护。
+本项目使用 **DeepSeekV4-Flash-0731** vibe coding。
 
 ## ✨ 功能
 
