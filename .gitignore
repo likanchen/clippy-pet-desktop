@@ -1,0 +1,15 @@
+# 构建产物
+dist/
+build/
+*.spec.bak
+
+# Python 缓存
+__pycache__/
+*.pyc
+
+# 运行日志与本地设置
+*.log
+settings.json
+
+# 打包中间文件
+*.toc
