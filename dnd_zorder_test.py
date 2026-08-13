@@ -33,6 +33,7 @@ full = tk.Toplevel(pet.root)
 full.overrideredirect(True)
 full.geometry("%dx%d+0+0" % (sw, sh))
 full.configure(bg="black")
+full.attributes("-topmost", True)   # 置顶全屏：Z 序高于其他应用窗口
 full.update()
 pet.root.update()
 time.sleep(0.3)

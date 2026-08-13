@@ -13,3 +13,7 @@ settings.json
 
 # 打包中间文件
 *.toc
+
+# AI 超分工具与临时产物（按需重新下载）
+tools/
+assets/*/hd/

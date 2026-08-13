@@ -97,6 +97,9 @@ SETTINGS_FILE = os.path.join(APP_DIR, "settings.json")
 
 MAX_ANIM_MS = 5000            # 非循环动画最长播放时长（超时优雅退出）
 MAX_EXIT_STEPS = 30           # 退出序列最大帧数（防二次循环）
+IDLE_ACTION_MIN_MS = 8000     # 待机小动作穿插最小间隔
+IDLE_ACTION_MAX_MS = 16000    # 待机小动作穿插最大间隔
+IDLE_ANIM_SPEED = 2.5         # 待机动画帧时长系数（>1 放慢，呼吸更舒缓）
 
 # 全局快捷键 -> 动画（默认映射，可在「快捷键动画设置」中编辑）
 DEFAULT_HOTKEYS = {
@@ -966,7 +969,7 @@ class ClippyPet:
         self._loop = False
         self._on_done = None
         self._after_anim = None
-        self._idle_exit_job = None   # 待机动作展示时长定时器
+        self._idle_action_job = None   # 待机小动作穿插定时器
 
         # 番茄钟
         self.pomo_work_min = self._s.get("pomo_work_min", POMO_WORK_MIN)
@@ -1170,13 +1173,15 @@ class ClippyPet:
     def _hwnd_is_fullscreen(hwnd):
         """判定指定窗口是否处于真全屏（覆盖整块显示器，非最大化窗口）。
 
-        旧实现只比较窗口尺寸，导致两类误判：
+        旧实现只比较窗口尺寸，导致三类误判：
         1) 最大化窗口（含 DWM 阴影外框时尺寸恰好等于屏幕）被当作全屏；
-        2) 点击桌面（Progman/WorkerW 全屏）时 clippy 被隐藏。
-        修复：排除桌面壳层与 WS_MAXIMIZE 窗口，用
-        DwmGetWindowAttribute 取真实可视矩形（剔除阴影/边框），
-        并以窗口所在显示器（MonitorFromWindow）的整屏区域作比较，
-        同时校验位置从显示器左上角开始，支持多显示器。
+        2) 点击桌面（Progman/WorkerW 全屏）时 clippy 被隐藏；
+        3) 隐藏/最小化的全屏窗口（如最小化的游戏）被当作当前全屏。
+        修复：排除桌面壳层、不可见/最小化窗口、以及「带标准边框的
+        最大化窗口」（任务栏自动隐藏时其可视矩形恰等于整屏，但只是
+        最大化不是全屏）；用 DwmGetWindowAttribute 取真实可视矩形
+        （剔除阴影/边框），以窗口所在显示器整屏区域作比较，并校验
+        位置从显示器左上角开始，支持多显示器。
         """
         try:
             import ctypes
@@ -1192,6 +1197,25 @@ class ClippyPet:
 
             # 取根窗口：避免浮动子层（如 CEF-OSC-WIDGET）干扰判定
             root = user32.GetAncestor(hwnd, 2)  # GA_ROOT
+
+            # 不可见/最小化窗口不参与判定：隐藏的全屏窗口、最小化的
+            # 全屏游戏（其矩形位置为 -32000 且尺寸等于屏幕）都会导致
+            # 非全屏状态下的误隐藏。
+            if not user32.IsWindowVisible(root):
+                return False
+            if user32.IsIconic(root):
+                return False
+
+            # 排除「普通可调整窗口最大化」：带标题栏/可调边框的最大化
+            # 窗口只是最大化而非全屏（任务栏自动隐藏时其可视矩形恰等于
+            # 整屏）。无边框最大化（WS_POPUP 无标题，如游戏/播放器
+            # 全屏）保留判定。
+            user32.GetWindowLongPtrW.restype = ctypes.c_ssize_t
+            style = user32.GetWindowLongPtrW(root, -16)  # GWL_STYLE
+            WS_MAXIMIZE, WS_CAPTION, WS_THICKFRAME = (
+                0x01000000, 0x00C00000, 0x00040000)
+            if (style & WS_MAXIMIZE) and (style & (WS_CAPTION | WS_THICKFRAME)):
+                return False
 
             # 真实可视矩形（DWM 扩展边框，剔除阴影外框）
             rect = wintypes.RECT()
@@ -1234,9 +1258,13 @@ class ClippyPet:
         不能只信 GetForegroundWindow：clippy 置顶后用户点击/拖拽过它，
         前台句柄会一直停在 clippy 自己（248×186）上，导致全屏应用漏判
         ——「显示在最前」+「全屏免打扰」同开时失效。因此前台是 clippy
-        时改为遍历 Z 序顶层窗口，找到任一真全屏窗口即判定为全屏。
-        遍历时过滤「驻留/叠加」类窗口（Chromium 屏幕控件层、UWP 容器），
-        避免把非用户当前全屏的驻留窗口误判。
+        时改为遍历 Z 序顶层窗口。
+
+        遍历规则（修复误判）：从 Z 序顶部往下找**第一个可见的、非
+        驻留/壳层类的顶层窗口**——它就是用户当前实际看到的窗口，它的
+        全屏状态即答案。旧实现遍历所有窗口、任一全屏即判 True，导致：
+        1) 隐藏/最小化的全屏窗口误判（用户没在看它也隐藏 clippy）；
+        2) 后台挂着的全屏窗口误判（用户切到普通窗口工作也被隐藏）。
         """
         import ctypes
         from ctypes import wintypes
@@ -1256,11 +1284,22 @@ class ClippyPet:
             # 取 Z 序最顶顶层窗口作起点。
             h = user32.GetTopWindow(None)
             while h:
-                if h != my and self._hwnd_is_fullscreen(h):
-                    # 过滤驻留/叠加类窗口：这些窗口全屏尺寸但非用户
-                    # 当前的全屏应用（Chromium 控件层、UWP 容器等）
-                    if not self._is_resident_class(h):
-                        return True
+                if h != my and not self._is_resident_class(h):
+                    root = user32.GetAncestor(h, 2)
+                    if (user32.IsWindowVisible(root)
+                            and not user32.IsIconic(root)):
+                        # 跳过系统常驻的极小辅助窗口（IME、GDI Hook、
+                        # ThumbnailDeviceHelper 等 1x1 可见窗口）——
+                        # 它们不是用户当前观看的窗口，否则会导致
+                        # 全屏判定被这些辅助窗口截断。
+                        rr = wintypes.RECT()
+                        if user32.GetWindowRect(root, ctypes.byref(rr)):
+                            w = rr.right - rr.left
+                            hh = rr.bottom - rr.top
+                            if w >= 100 and hh >= 60:
+                                # 第一个有意义的可见非驻留顶层窗口：
+                                # 它是否全屏即当前是否处于全屏
+                                return self._hwnd_is_fullscreen(h)
                 h = user32.GetWindow(h, 2)  # GW_HWNDNEXT
             return False
         except Exception:
@@ -1349,26 +1388,36 @@ class ClippyPet:
         self._rebuild_cache()
 
     def _rebuild_cache(self):
-        """按当前 self.zoom / self.size 重建全部帧缓存（缩放后调用）。"""
+        """惰性帧缓存：仅清空缓存并重建空帧占位。
+        帧图按需加载（_photo 懒加载），不再启动时一次性加载
+        全部数百帧 → 大幅降低内存占用与启动 IO。
+        缩放/换肤后调用（self.size / self.frames_dir 已更新）。"""
         self._cache = {}
-        for ainfo in self.animations.values():
-            for f in ainfo["frames"]:
-                if f["f"] and f["f"] not in self._cache:
-                    p = os.path.join(self.frames_dir, f["f"] + ".png")
-                    im = Image.open(p).convert("RGBA")
-                    self._cache[f["f"]] = ImageTk.PhotoImage(
-                        self._fix_edges(im))
         # 空帧占位（官方 images=[] 时显示空白）
         blank = Image.new("RGBA", self.size, (0, 0, 0, 0))
         self._blank_img = ImageTk.PhotoImage(blank)
 
     def _photo(self, key):
-        return self._cache[key]
+        """惰性获取帧图：未缓存则从磁盘加载并缩放后缓存。
+        只缓存实际播放过的帧，内存占用与动画使用量成正比。"""
+        im = self._cache.get(key)
+        if im is not None:
+            return im
+        try:
+            p = os.path.join(self.frames_dir, key + ".png")
+            img = Image.open(p).convert("RGBA")
+            im = ImageTk.PhotoImage(self._fix_edges(img))
+        except Exception:
+            im = self._blank_img
+        self._cache[key] = im
+        return im
 
     # ---------- 动画引擎（官方 Animator branching 逻辑） ----------
-    def play(self, action, loop=False, on_done=None):
+    def play(self, action, loop=False, on_done=None, speed=1.0):
         """action 为官方动画名；loop=True 无回调时循环；on_done 播完后回调。
-        完整支持官方 branching（随机分支跳转）与 exitBranch。"""
+        完整支持官方 branching（随机分支跳转）与 exitBranch。
+        speed>1 放慢帧时长（用于待机动画的舒缓节奏），
+        交互/提醒/番茄钟等保持官方速度（speed=1.0）。"""
         if action not in self.animations:
             return
         if self._after_anim:
@@ -1386,6 +1435,7 @@ class ClippyPet:
         self._steps = 0
         self._anim_ms = 0
         self._exit_steps = 0
+        self._anim_speed = speed
         self._loop = loop
         self._on_done = on_done
         self._step()
@@ -1458,7 +1508,14 @@ class ClippyPet:
         return False
 
     def _step(self):
+        # 真正取消上一个帧定时器（而非仅置 None）：
+        # 真实 mainloop 运行时该 after 已执行，cancel 为无害 no-op；
+        # 手动步进/测试时则能消除残留回调，避免陈旧 _step 累积快进动画。
         if self._after_anim:
+            try:
+                self.root.after_cancel(self._after_anim)
+            except Exception:
+                pass
             self._after_anim = None
         self._steps += 1
         if self._maybe_exit():
@@ -1470,52 +1527,64 @@ class ClippyPet:
         if not (at_last and self._use_exit):
             self._cur = self._seq[self._ai]
         f = self._cur
-        self._anim_ms += f["d"]
+        delay = int(f["d"] * self._anim_speed)   # 待机放慢：帧时长 × 系数
+        self._anim_ms += delay
         if f["f"]:
-            self.canvas.itemconfig(self._img_item, image=self._cache[f["f"]])
+            self.canvas.itemconfig(self._img_item, image=self._photo(f["f"]))
         else:
             self.canvas.itemconfig(self._img_item, image=self._blank_img)
-        self._after_anim = self.root.after(f["d"], self._step)
+        self._after_anim = self.root.after(delay, self._step)
         if changed and at_last:
             if self._on_done:
                 cb = self._on_done
                 self._on_done = None
                 cb()
             elif self._loop:
+                # 循环重启：重置帧索引后由「已调度的 after」自然推进到第 0 帧。
+                # 绝不能在此递归 _step()——会额外调度一个 after 定时器，
+                # 多个定时器同时排队导致动画加速（帧间隔变短、越跑越快）。
                 self._ai = 0
                 self._cur = None
-                self._step()
                 return
             else:
                 # 非循环动画自然结束且无回调 → 回待机
                 self._idle_next()
 
     def _idle_next(self):
-        """随机选一个 Idle 动画播放，展示约 2.5~4.5 秒后经
-        exitBranch 收尾帧优雅退出，再换下一个——待机动作时长自然、
-        切换不突兀（不再把长动画完整播完再硬切）。"""
-        if self._idle_exit_job:
-            try:
-                self.root.after_cancel(self._idle_exit_job)
-            except Exception:
-                pass
-            self._idle_exit_job = None
-        if not self._idle_anims:
-            self.play(self._idle_anim, loop=True)
-            return
-        self.play(random.choice(self._idle_anims), on_done=self._idle_next)
-        # 展示时长到点触发优雅退出：_exiting 后 _next_idx 会走
-        # 当前帧的 exitBranch 收尾序列，动作自然结束再换下一个
-        self._idle_exit_job = self.root.after(
-            random.randint(2500, 4500), self._idle_exit_now)
-
-    def _idle_exit_now(self):
-        """待机动作展示时间到：标记退出，等待收尾帧自然切换。"""
-        self._idle_exit_job = None
+        """回到主待机：主待机动画循环播放作为稳定基底（连续呼吸），
+        并调度低频小动作穿插。所有交互动作播完都回到这里，
+        保证待机视觉连续、切换不再频繁。"""
         if self._quitting:
             return
-        if self._is_idle() and not self._exiting:
-            self._exiting = True
+        self.play(self._idle_anim, loop=True, speed=IDLE_ANIM_SPEED)
+        self._schedule_idle_action()
+
+    def _schedule_idle_action(self):
+        """调度下一次待机小动作（8~16 秒随机）。"""
+        if self._idle_action_job:
+            try:
+                self.root.after_cancel(self._idle_action_job)
+            except Exception:
+                pass
+        self._idle_action_job = self.root.after(
+            random.randint(IDLE_ACTION_MIN_MS, IDLE_ACTION_MAX_MS),
+            self._idle_play_action)
+
+    def _idle_play_action(self):
+        """穿插一次待机小动作（眨眼/摇摆/挠头等），播完回主待机。"""
+        self._idle_action_job = None
+        if self._quitting:
+            return
+        if not self._is_idle():
+            # 当前不在待机（交互/番茄钟/换肤中）→ 重新调度
+            self._schedule_idle_action()
+            return
+        # 小动作池：排除主待机动画本身
+        pool = [a for a in self._idle_anims if a != self._idle_anim]
+        if not pool:
+            pool = self._idle_anims
+        self.play(random.choice(pool), on_done=self._idle_next,
+                  speed=IDLE_ANIM_SPEED)
 
     def _start_loops(self):
         self._idle_next()
@@ -1872,8 +1941,9 @@ class ClippyPet:
         self.canvas.config(width=w, height=h)
         self.root.geometry(f"{w}x{h}+{cx - w // 2}+{cy - h // 2}")
         key = self._cur["f"] if self._cur and self._cur["f"] else None
-        self.canvas.itemconfig(self._img_item,
-                               image=self._cache.get(key, self._blank_img))
+        self.canvas.itemconfig(
+            self._img_item,
+            image=self._photo(key) if key else self._blank_img)
         self._save_settings()
 
     def _skin_thumb(self, sid, size=(44, 33)):
@@ -1971,12 +2041,12 @@ class ClippyPet:
             return
         self._quitting = True
         self._hk_running = False   # 停止全局按键轮询线程
-        if self._idle_exit_job:
+        if self._idle_action_job:
             try:
-                self.root.after_cancel(self._idle_exit_job)
+                self.root.after_cancel(self._idle_action_job)
             except Exception:
                 pass
-            self._idle_exit_job = None
+            self._idle_action_job = None
         if self.bubble is not None:
             try:
                 self.bubble.hide()
