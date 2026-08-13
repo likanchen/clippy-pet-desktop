@@ -6,11 +6,11 @@ import sys
 
 sys.frozen = True
 sys.executable = os.path.abspath(
-    "dist/ClippyPet-v0.1/ClippyPet-v0.1.exe")
+    "dist/ClippyPet-v0.2/ClippyPet-v0.2.exe")
 
 import clippy_pet as cp  # noqa: E402
 
-assert cp.APP_DIR.endswith("dist" + os.sep + "ClippyPet-v0.1"), cp.APP_DIR
+assert cp.APP_DIR.endswith("dist" + os.sep + "ClippyPet-v0.2"), cp.APP_DIR
 assert cp.DATA_DIR == os.path.join(cp.APP_DIR, "_internal"), cp.DATA_DIR
 assert os.path.isdir(os.path.join(cp.DATA_DIR, "assets", "clippy", "frames"))
 print("PATH OK:", cp.APP_DIR)

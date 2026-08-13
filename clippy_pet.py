@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Clippy 桌面宠物 v0.1 —— 官方 Clippy 素材逐帧动画 + 换肤/提醒/番茄钟/快捷键
+Clippy 桌面宠物 v0.2 —— 官方 Clippy 素材逐帧动画 + 换肤/提醒/番茄钟/快捷键
 素材: smore-inc/clippy.js 官方 Clippy agent (map.png 精灵表 + agent.js 动画定义)
 功能: 喝水提醒 / 锻炼提醒 / 番茄钟 / 交互动作 / 拖动 / 右键菜单 / 中英文切换。
 运行: python clippy_pet.py    （依赖 Pillow：pip install Pillow）
@@ -211,7 +211,7 @@ TR = {
             "看起来你在努力工作呢！\n别忘了照顾好自己。",
             "需要帮忙吗？\n右键我可以设置提醒、开番茄钟。",
         ],
-        "about": "Clippy 桌面宠物 v0.1\n"
+        "about": "Clippy 桌面宠物 v0.2\n"
                  "官方 Clippy 素材逐帧动画\n"
                  "素材来源: smore-inc/clippy.js（MIT）\n"
                  "Python/tkinter + Pillow 打造。",
@@ -304,7 +304,7 @@ TR = {
             "Looks like you're working hard!\nDon't forget to take care of yourself.",
             "Need help? Right-click me for\nreminders, actions and Pomodoro.",
         ],
-        "about": "Clippy Desktop Pet v0.1\n"
+        "about": "Clippy Desktop Pet v0.2\n"
                  "Official Clippy sprite animations\n"
                  "Sprites: smore-inc/clippy.js (MIT)\n"
                  "Built with Python/tkinter + Pillow.",
