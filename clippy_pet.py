@@ -6,6 +6,7 @@ Clippy 桌面宠物 v0.2 —— 官方 Clippy 素材逐帧动画 + 换肤/提醒
 运行: python clippy_pet.py    （依赖 Pillow：pip install Pillow）
 """
 import base64
+import collections
 import io
 import json
 import os
@@ -100,6 +101,7 @@ MAX_EXIT_STEPS = 30           # 退出序列最大帧数（防二次循环）
 IDLE_ACTION_MIN_MS = 8000     # 待机小动作穿插最小间隔
 IDLE_ACTION_MAX_MS = 16000    # 待机小动作穿插最大间隔
 IDLE_ANIM_SPEED = 2.5         # 待机动画帧时长系数（>1 放慢，呼吸更舒缓）
+MAX_FRAME_CACHE = 200         # 帧缓存 LRU 上限（防内存回涨）
 
 # 全局快捷键 -> 动画（默认映射，可在「快捷键动画设置」中编辑）
 DEFAULT_HOTKEYS = {
@@ -1392,16 +1394,18 @@ class ClippyPet:
         帧图按需加载（_photo 懒加载），不再启动时一次性加载
         全部数百帧 → 大幅降低内存占用与启动 IO。
         缩放/换肤后调用（self.size / self.frames_dir 已更新）。"""
-        self._cache = {}
+        self._cache = collections.OrderedDict()
         # 空帧占位（官方 images=[] 时显示空白）
         blank = Image.new("RGBA", self.size, (0, 0, 0, 0))
         self._blank_img = ImageTk.PhotoImage(blank)
 
     def _photo(self, key):
         """惰性获取帧图：未缓存则从磁盘加载并缩放后缓存。
-        只缓存实际播放过的帧，内存占用与动画使用量成正比。"""
+        LRU 上限：缓存超过 MAX_FRAME_CACHE 时淘汰最久未用的帧，
+        防止长时间使用后内存回涨。"""
         im = self._cache.get(key)
         if im is not None:
+            self._cache.move_to_end(key)   # 标记最近使用
             return im
         try:
             p = os.path.join(self.frames_dir, key + ".png")
@@ -1410,6 +1414,8 @@ class ClippyPet:
         except Exception:
             im = self._blank_img
         self._cache[key] = im
+        if len(self._cache) > MAX_FRAME_CACHE:
+            self._cache.popitem(last=False)   # 淘汰最久未用
         return im
 
     # ---------- 动画引擎（官方 Animator branching 逻辑） ----------
