@@ -11,6 +11,9 @@ This project uses **DeepSeekV4-Flash-0731** for vibe coding.
 ## ✨ Features
 
 ### 🐱 Skins (10 official characters)
+
+![Skin styles](docs/images/skins_preview.png)
+
 - Assets from the official `agents/` directory of [clippyjs/clippy.js](https://github.com/clippyjs/clippy.js), 10 characters: **Clippy** (classic paperclip), Merlin (wizard), Genie (genie), Bonzi (gorilla), Peedy (parrot), Rover (dog), Links (cat), Rocky (rock star), F1 (race driver), Genius (prodigy)
 - Right-click menu → "Skin": each skin shows a **thumbnail preview**, current skin checked
 - **Skin-switch transition animation**: old skin plays "Goodbye" → new skin plays "Hello" → back to idle
@@ -66,7 +69,11 @@ Or double-click `run_clippy-pet.bat` (no console window; launches via Task Sched
 
 ## 📖 Usage
 
-Right-click the pet to open the menu: water/exercise reminders (toggle + settings), Pomodoro (start/stop/settings), perform actions (filtered per skin), skin switcher, greet, about, always on top, fullscreen DND, launch at startup, global hotkey animations, language toggle, exit.
+Right-click the pet to open the context menu, structured as shown:
+
+![Context menu](docs/images/context_menu.png)
+
+Water/exercise reminders (toggle + settings), Pomodoro (start/stop/settings), perform actions (filtered per skin), skin switcher, greet, about, always on top, fullscreen DND, launch at startup, global hotkey animations, language toggle, exit.
 
 ## 🛠 Build the exe
 
