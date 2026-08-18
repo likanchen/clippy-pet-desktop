@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Clippy 桌面宠物 v0.2 —— 官方 Clippy 素材逐帧动画 + 换肤/提醒/番茄钟/快捷键
+Clippy 桌面宠物 v0.2.1 —— 官方 Clippy 素材逐帧动画 + 换肤/提醒/番茄钟/快捷键
 素材: smore-inc/clippy.js 官方 Clippy agent (map.png 精灵表 + agent.js 动画定义)
 功能: 喝水提醒 / 锻炼提醒 / 番茄钟 / 交互动作 / 拖动 / 右键菜单 / 中英文切换。
 运行: python clippy_pet.py    （依赖 Pillow：pip install Pillow）
@@ -16,7 +16,7 @@ import threading
 import time
 import tkinter as tk
 
-from PIL import (Image, ImageChops, ImageDraw, ImageFilter, ImageFont,
+from PIL import (Image, ImageDraw, ImageFilter, ImageFont,
                  ImageOps, ImageTk)
 
 # ---------------- 配置 ----------------
@@ -214,7 +214,7 @@ TR = {
             "看起来你在努力工作呢！\n别忘了照顾好自己。",
             "需要帮忙吗？\n右键我可以设置提醒、开番茄钟。",
         ],
-        "about": "Clippy 桌面宠物 v0.2\n"
+        "about": "Clippy 桌面宠物 v0.2.1\n"
                  "官方 Clippy 素材逐帧动画\n"
                  "素材来源: smore-inc/clippy.js（MIT）\n"
                  "Python/tkinter + Pillow 打造。",
@@ -307,7 +307,7 @@ TR = {
             "Looks like you're working hard!\nDon't forget to take care of yourself.",
             "Need help? Right-click me for\nreminders, actions and Pomodoro.",
         ],
-        "about": "Clippy Desktop Pet v0.2\n"
+        "about": "Clippy Desktop Pet v0.2.1\n"
                  "Official Clippy sprite animations\n"
                  "Sprites: smore-inc/clippy.js (MIT)\n"
                  "Built with Python/tkinter + Pillow.",
@@ -989,8 +989,6 @@ class ClippyPet:
         self._on_done = None
         self._after_anim = None
         self._idle_action_job = None   # 待机小动作穿插定时器
-        self._idle_action_job_end = None  # 穿插动作展示时长/优雅收尾定时器
-        self._idle_action = None       # 当前穿插动作名
 
         # 番茄钟
         self.pomo_work_min = self._s.get("pomo_work_min", POMO_WORK_MIN)
@@ -1368,45 +1366,18 @@ class ClippyPet:
     def _fix_edges(self, im):
         """平滑边缘（抗锯齿，配合色键透明）：
         1) 用 RGBa 中间模式缩放，避免半透明边缘颜色被稀释产生色偏；
-        2) 对 alpha 轻高斯模糊柔化硬边台阶；
-        3) 掩码约束：仅原本非透明的像素可能成为前景，防止纯背景
-           像素被模糊抬升成边缘黑点；
-        4) 阈值化 + 去孤立像素（黑点/白点毛刺）。
+        2) 对 alpha 轻高斯模糊以柔化硬边台阶、减少单像素锯齿/断点；
+        3) 用较低阈值二值化 alpha（色键窗口只支持 1-bit 透明）。
         """
         if self.zoom != 1:
             im = im.convert("RGBa").resize(self.size, Image.LANCZOS)
             im = im.convert("RGBA")
-        orig = im.getchannel("A")
-        # 方案1：模糊平滑边缘
-        alpha = orig.filter(ImageFilter.GaussianBlur(1.0))
+        alpha = im.getchannel("A")
+        # 平滑 alpha：消除放大后硬边/单像素毛刺，使轮廓更连续
+        alpha = alpha.filter(ImageFilter.GaussianBlur(1.0))
         alpha = alpha.point(lambda v: 255 if v >= 70 else 0)
-        # 掩码约束：只保留原本非透明像素（消除背景像素被抬升的黑点）
-        mask = orig.point(lambda v: 255 if v > 0 else 0)
-        alpha = ImageChops.multiply(alpha, mask)
-        # 方案2：去孤立像素（前景中的透明孤岛 / 背景中的前景孤点）
-        alpha = self._remove_isolated_alpha(alpha)
         im.putalpha(alpha)
         return im
-
-    @staticmethod
-    def _remove_isolated_alpha(alpha):
-        """去除二值 alpha 中的孤立单像素（黑点/白点毛刺）：
-        8 邻域全相反则翻转该像素。保留连续的 1px 细线（有邻居）。"""
-        a = alpha.load()
-        w, h = alpha.size
-        new = alpha.copy()
-        b = new.load()
-        for y in range(1, h - 1):
-            for x in range(1, w - 1):
-                nb = (a[x-1, y-1], a[x, y-1], a[x+1, y-1],
-                      a[x-1, y], a[x+1, y],
-                      a[x-1, y+1], a[x, y+1], a[x+1, y+1])
-                v = a[x, y]
-                if v == 255 and all(p == 0 for p in nb):
-                    b[x, y] = 0      # 孤立前景点（白毛刺）→ 删
-                elif v == 0 and all(p == 255 for p in nb):
-                    b[x, y] = 255    # 前景中的透明孤岛（黑点）→ 补
-        return new
 
     def _load_assets(self):
         """按当前皮肤加载动画定义并解析语义映射（皮肤自适应）。"""
@@ -1610,12 +1581,6 @@ class ClippyPet:
         """回到主待机：主待机动画循环播放作为稳定基底（连续呼吸），
         并调度低频小动作穿插。所有交互动作播完都回到这里，
         保证待机视觉连续、切换不再频繁。"""
-        if self._idle_action_job_end:
-            try:
-                self.root.after_cancel(self._idle_action_job_end)
-            except Exception:
-                pass
-            self._idle_action_job_end = None
         if self._quitting:
             return
         self.play(self._idle_anim, loop=True, speed=IDLE_ANIM_SPEED)
@@ -1645,28 +1610,8 @@ class ClippyPet:
         pool = [a for a in self._idle_anims if a != self._idle_anim]
         if not pool:
             pool = self._idle_anims
-        action = random.choice(pool)
-        self._idle_action = action
-        self.play(action, on_done=self._idle_next, speed=IDLE_ANIM_SPEED)
-        # 展示时长定时器：到时触发优雅退出（_exiting → 走当前帧的
-        # exitBranch 收尾序列恢复姿态），避免长动作（如 IdleSnooze
-        # 瘫倒 13s）自然播完从结尾姿态硬切回主待机。
-        if self._idle_action_job_end:
-            try:
-                self.root.after_cancel(self._idle_action_job_end)
-            except Exception:
-                pass
-        self._idle_action_job_end = self.root.after(
-            random.randint(4000, 6000), self._idle_end_check)
-
-    def _idle_end_check(self):
-        """穿插动作展示时长到：标记优雅退出，等待收尾帧恢复姿态。"""
-        self._idle_action_job_end = None
-        if self._quitting:
-            return
-        # 仅当仍在当前穿插动作且尚未退出时触发，避免干扰主待机/其他动画
-        if self._anim_name == self._idle_action and not self._exiting:
-            self._exiting = True
+        self.play(random.choice(pool), on_done=self._idle_next,
+                  speed=IDLE_ANIM_SPEED)
 
     def _start_loops(self):
         self._idle_next()

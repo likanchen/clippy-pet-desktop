@@ -58,7 +58,7 @@ This project uses **DeepSeekV4-Flash-0731** for vibe coding.
 ## 🚀 Run
 
 ### Option 1: Run the exe (recommended)
-Build output is in `dist/ClippyPet-v0.2/` — double-click `ClippyPet-v0.2.exe`. **No Python needed**; copy the folder to another PC and it works.
+Build output is in `dist/ClippyPet-v0.2.1/` — double-click `ClippyPet-v0.2.1.exe`. **No Python needed**; copy the folder to another PC and it works.
 
 ### Option 2: Run from source
 ```bash
@@ -78,9 +78,9 @@ Water/exercise reminders (toggle + settings), Pomodoro (start/stop/settings), pe
 ## 🛠 Build the exe
 
 ```bash
-python -m PyInstaller --noconfirm --clean ClippyPet-v0.2.spec
+python -m PyInstaller --noconfirm --clean ClippyPet-v0.2.1.spec
 ```
-- Output: `dist/ClippyPet-v0.2/ClippyPet-v0.2.exe` (onedir, bundles all skin assets)
+- Output: `dist/ClippyPet-v0.2.1/ClippyPet-v0.2.1.exe` (onedir, bundles all skin assets)
 - Generate icon: `python make_icon.py` (creates `clippy.ico` from Clippy's first frame)
 - After packaging, `settings.json` is persisted next to the exe
 
@@ -93,7 +93,7 @@ clippy-pet/
 │   ├── skins/<skin>/        # 10 skins: frames/*.png sprite frames + animations.json
 │   └── dl/skins/<skin>/     # Original official assets (agent.js + map.png)
 ├── extract_skins.py         # Skin extraction script (rebuilds skins/ from raw assets)
-├── ClippyPet-v0.2.spec   # PyInstaller build config
+├── ClippyPet-v0.2.1.spec   # PyInstaller build config
 ├── make_icon.py             # exe icon generator
 ├── launch.py                # Background launcher (Task Scheduler based, survives terminal cleanup)
 ├── run_clippy-pet.bat       # No-console startup script (via Task Scheduler)
