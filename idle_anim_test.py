@@ -13,13 +13,13 @@ cp.SETTINGS_FILE = os.path.join(tempfile.mkdtemp(), "idle.json")
 pet = cp.ClippyPet()
 pet.root.update()
 
-# 1. 启动后：主待机动画循环播放 + 穿插定时器已调度 + 放慢系数生效
+# 1. 启动后：主待机动画循环播放 + 穿插定时器已调度 + 官方速度（speed=1.0）
 assert pet._anim_name == pet._idle_anim, (pet._anim_name, pet._idle_anim)
 assert pet._loop is True, "主待机应循环播放"
 assert pet._idle_action_job is not None, "穿插定时器未调度"
 assert pet._anim_speed == cp.IDLE_ANIM_SPEED, \
-    "主待机应放慢: %s" % pet._anim_speed
-print("[1] 主待机循环 + 定时器 + 放慢%.1fx  OK: %s" %
+    "主待机速度系数: %s" % pet._anim_speed
+print("[1] 主待机循环 + 定时器 + 速度%.1fx  OK: %s" %
       (pet._anim_speed, pet._idle_anim))
 
 # 2. 间隔范围 8~16 秒
