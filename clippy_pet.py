@@ -16,7 +16,8 @@ import threading
 import time
 import tkinter as tk
 
-from PIL import Image, ImageDraw, ImageFont, ImageOps, ImageTk
+from PIL import (Image, ImageChops, ImageDraw, ImageFilter, ImageFont,
+                 ImageOps, ImageTk)
 
 # ---------------- 配置 ----------------
 BASE = os.path.dirname(os.path.abspath(__file__))
@@ -32,7 +33,7 @@ else:
 CLIPPY_DIR = os.path.join(DATA_DIR, "assets", "clippy")
 FRAMES_DIR = os.path.join(CLIPPY_DIR, "frames")
 ANIM_JSON = os.path.join(CLIPPY_DIR, "animations.json")
-ZOOM = 2                        # 精灵放大倍数
+ZOOM = 1.5                      # 精灵放大倍数（默认 150%）
 ZOOM_STEPS = [1, 1.5, 2, 2.5, 3, 4]   # 可调大小档位（倍率）
 WATER_INTERVAL_MIN = 45
 EXERCISE_INTERVAL_MIN = 60
@@ -129,43 +130,43 @@ def _load_settings():
 TR = {
     "zh": {
         "bubble_title": "回形针助手",
-        "menu_water": "💧喝水提醒",
-        "menu_ex": "🏃锻炼提醒",
-        "menu_pomo_start": "🍅开始番茄钟",
-        "menu_pomo_stop": "⏹停止番茄钟",
-        "menu_pomo_settings": "⏱番茄钟设置…",
+        "menu_water": "喝水提醒",
+        "menu_ex": "锻炼提醒",
+        "menu_pomo_start": "开始番茄钟",
+        "menu_pomo_stop": "停止番茄钟",
+        "menu_pomo_settings": "番茄钟设置",
         "menu_perform": "表演动作",
         "menu_water_now": "立即提醒喝水",
         "menu_ex_now": "立即提醒锻炼",
-        "menu_greet": "👋打个招呼",
-        "menu_about": "ℹ关于",
-        "menu_exit": "✖退出",
-        "menu_pin": "📌显示在最前",
-        "menu_dnd": "🌙全屏免打扰",
-        "menu_auto": "⚡开机自启动",
-        "menu_hotkey": "⌨全局快捷键动画",
+        "menu_greet": "打个招呼",
+        "menu_about": "关于",
+        "menu_exit": "退出",
+        "menu_pin": "显示在最前",
+        "menu_dnd": "全屏免打扰",
+        "menu_auto": "开机自启动",
+        "menu_hotkey": "全局快捷键动画",
         "hotkey_on_msg": "全局快捷键动画已开启",
         "hotkey_off_msg": "全局快捷键动画已关闭",
-        "menu_lang": "🌐切换为 English",
+        "menu_lang": "切换为 English",
         "menu_size": "调整大小",
         "menu_skin": "换肤",
         "skin_switched": "已切换皮肤：{skin}",
-        "act_wave": "👋挥手", "act_pointdown": "⬇向下示意", "act_think": "🤔思考",
-        "act_write": "✍写字", "act_happy": "🎉庆祝", "act_artsy": "🌈画彩虹",
-        "act_search": "🔍搜索", "act_print": "🖨打印", "act_save": "💾保存",
-        "act_sleep": "😴睡觉", "act_hearing": "👂歪头听",
-        "act_lookup": "⬆看上面", "act_lookdown": "⬇看下面",
-        "act_lookleft": "⬅看左边", "act_lookright": "➡看右边",
-        "act_surprise": "😲惊讶",
-        "act_mail": "📧发邮件",
-        "act_check": "🔎检查中", "act_processing": "⚙处理中",
-        "act_goodbye": "👋再见",
-        "act_attention": "📢吸引注意", "act_trash": "🗑清空回收站",
-        "act_greeting": "🙋打招呼",
-        "act_gestureleft": "👈左示意", "act_gestureright": "👉右示意",
-        "act_gestureup": "👆上示意",
-        "act_lookupright": "↗看右上", "act_lookupleft": "↖看左上",
-        "act_lookdownleft": "↙看左下", "act_lookdownright": "↘看右下",
+        "act_wave": "挥手", "act_pointdown": "向下示意", "act_think": "思考",
+        "act_write": "写字", "act_happy": "庆祝", "act_artsy": "画彩虹",
+        "act_search": "搜索", "act_print": "打印", "act_save": "保存",
+        "act_sleep": "睡觉", "act_hearing": "歪头听",
+        "act_lookup": "看上面", "act_lookdown": "看下面",
+        "act_lookleft": "看左边", "act_lookright": "看右边",
+        "act_surprise": "惊讶",
+        "act_mail": "发邮件",
+        "act_check": "检查中", "act_processing": "处理中",
+        "act_goodbye": "再见",
+        "act_attention": "吸引注意", "act_trash": "清空回收站",
+        "act_greeting": "打招呼",
+        "act_gestureleft": "左示意", "act_gestureright": "右示意",
+        "act_gestureup": "上示意",
+        "act_lookupright": "看右上", "act_lookupleft": "看左上",
+        "act_lookdownleft": "看左下", "act_lookdownright": "看右下",
         "water_tips": [
             "看起来你已经盯着屏幕好一会儿了。\n要去接杯水喝吗？",
             "温馨提示：身体缺水会让注意力下降哦，\n喝口水吧！",
@@ -178,8 +179,8 @@ TR = {
             "我可以一辈子保持一个姿势，\n但你不行——起来拉伸一下！",
             "锻炼提醒：做 5 个深蹲，\n或者绕桌子走一圈？",
         ],
-        "btn_done": "喝过了 ✓", "btn_snooze": "{n}分钟后",
-        "btn_off": "今天别再提醒", "btn_ex_done": "已活动 ✓",
+        "btn_done": "喝过了 ", "btn_snooze": "{n}分钟后",
+        "btn_off": "今天别再提醒", "btn_ex_done": "已活动 ",
         "btn_pomo_next": "继续工作", "btn_pomo_stop": "结束", "btn_ok": "好",
         "pomo_running": "番茄钟已经在走啦！\n右键菜单可以停止。",
         "pomo_start": "🍅 番茄钟启动！专注工作 {n} 分钟。\n我会在这段时间里看着你哦～",
@@ -190,8 +191,8 @@ TR = {
         "settings_title": "番茄钟设置",
         "settings_work": "工作时长（分钟）",
         "settings_break": "休息时长（分钟）",
-        "menu_water_settings": "⚙喝水提醒设置…",
-        "menu_ex_settings": "⚙锻炼提醒设置…",
+        "menu_water_settings": "喝水提醒设置",
+        "menu_ex_settings": "锻炼提醒设置",
         "water_settings_title": "喝水提醒设置",
         "water_settings_label": "提醒间隔（分钟）",
         "ex_settings_title": "锻炼提醒设置",
@@ -221,44 +222,44 @@ TR = {
     },
     "en": {
         "bubble_title": "Clippy Assistant",
-        "menu_water": "💧Water reminder",
-        "menu_ex": "🏃Exercise reminder",
-        "menu_pomo_start": "🍅Start Pomodoro",
-        "menu_pomo_stop": "⏹Stop Pomodoro",
-        "menu_pomo_settings": "⏱Pomodoro settings…",
+        "menu_water": "Water reminder",
+        "menu_ex": "Exercise reminder",
+        "menu_pomo_start": "Start Pomodoro",
+        "menu_pomo_stop": "Stop Pomodoro",
+        "menu_pomo_settings": "Pomodoro settings",
         "menu_perform": "Perform actions",
         "menu_water_now": "Remind me to drink now",
         "menu_ex_now": "Remind me to move now",
-        "menu_greet": "👋Say hello",
-        "menu_about": "ℹAbout",
-        "menu_exit": "✖Exit",
-        "menu_pin": "📌Always on top",
-        "menu_dnd": "🌙Fullscreen DND",
-        "menu_auto": "⚡Launch at startup",
-        "menu_hotkey": "⌨Global hotkey animations",
+        "menu_greet": "Say hello",
+        "menu_about": "About",
+        "menu_exit": "Exit",
+        "menu_pin": "Always on top",
+        "menu_dnd": "Fullscreen DND",
+        "menu_auto": "Launch at startup",
+        "menu_hotkey": "Global hotkey animations",
         "hotkey_on_msg": "Global hotkey animations enabled",
         "hotkey_off_msg": "Global hotkey animations disabled",
-        "menu_lang": "🌐Switch to 中文",
+        "menu_lang": "Switch to 中文",
         "menu_size": "Resize",
         "menu_skin": "Skin",
         "skin_switched": "Skin switched: {skin}",
-        "act_wave": "👋Wave", "act_pointdown": "⬇Point down", "act_think": "🤔Think",
-        "act_write": "✍Write", "act_happy": "🎉Celebrate",
-        "act_artsy": "🌈Draw rainbow", "act_search": "🔍Search",
-        "act_print": "🖨Print", "act_save": "💾Save", "act_sleep": "😴Sleep",
-        "act_hearing": "👂Listen",
-        "act_lookup": "⬆Look up", "act_lookdown": "⬇Look down",
-        "act_lookleft": "⬅Look left", "act_lookright": "➡Look right",
-        "act_surprise": "😲Surprise",
-        "act_mail": "📧Mail",
-        "act_check": "🔎Check", "act_processing": "⚙Process",
-        "act_goodbye": "👋Goodbye",
-        "act_attention": "📢Attention", "act_trash": "🗑Empty trash",
-        "act_greeting": "🙋Greeting",
-        "act_gestureleft": "👈Gest left", "act_gestureright": "👉Gest right",
-        "act_gestureup": "👆Gest up",
-        "act_lookupright": "↗Up-right", "act_lookupleft": "↖Up-left",
-        "act_lookdownleft": "↙Down-left", "act_lookdownright": "↘Down-right",
+        "act_wave": "Wave", "act_pointdown": "Point down", "act_think": "Think",
+        "act_write": "Write", "act_happy": "Celebrate",
+        "act_artsy": "Draw rainbow", "act_search": "Search",
+        "act_print": "Print", "act_save": "Save", "act_sleep": "Sleep",
+        "act_hearing": "Listen",
+        "act_lookup": "Look up", "act_lookdown": "Look down",
+        "act_lookleft": "Look left", "act_lookright": "Look right",
+        "act_surprise": "Surprise",
+        "act_mail": "Mail",
+        "act_check": "Check", "act_processing": "Process",
+        "act_goodbye": "Goodbye",
+        "act_attention": "Attention", "act_trash": "Empty trash",
+        "act_greeting": "Greeting",
+        "act_gestureleft": "Gest left", "act_gestureright": "Gest right",
+        "act_gestureup": "Gest up",
+        "act_lookupright": "Up-right", "act_lookupleft": "Up-left",
+        "act_lookdownleft": "Down-left", "act_lookdownright": "Down-right",
         "water_tips": [
             "Looks like you've been staring at the screen.\nTime to grab some water?",
             "Heads up: dehydration hurts focus.\nTake a sip!",
@@ -271,8 +272,8 @@ TR = {
             "I can hold one pose forever,\nbut you can't — get up and stretch!",
             "Exercise alert: do 5 squats,\nor walk around your desk?",
         ],
-        "btn_done": "Done ✓", "btn_snooze": "{n} min later",
-        "btn_off": "Not today", "btn_ex_done": "Moved ✓",
+        "btn_done": "Done ", "btn_snooze": "{n} min later",
+        "btn_off": "Not today", "btn_ex_done": "Moved ",
         "btn_pomo_next": "Next round", "btn_pomo_stop": "Stop", "btn_ok": "OK",
         "pomo_running": "A Pomodoro is already running!\nRight-click to stop it.",
         "pomo_start": "🍅 Pomodoro started! Focus for {n} minutes.\nI'll be watching you～",
@@ -283,8 +284,8 @@ TR = {
         "settings_title": "Pomodoro Settings",
         "settings_work": "Work minutes",
         "settings_break": "Break minutes",
-        "menu_water_settings": "⚙Water reminder settings...",
-        "menu_ex_settings": "⚙Exercise reminder settings...",
+        "menu_water_settings": "Water reminder settings...",
+        "menu_ex_settings": "Exercise reminder settings...",
         "water_settings_title": "Water Reminder Settings",
         "water_settings_label": "Interval (minutes)",
         "ex_settings_title": "Exercise Reminder Settings",
@@ -313,6 +314,22 @@ TR = {
         "lang_switched": "Language switched to English ✓",
     },
 }
+
+
+def _scrub_symbols(s):
+    """移除会被窗口/气泡字体渲染成方框的符号与 emoji。
+    保留汉字、ASCII、中文标点；删除 U+2000-2BFF（⌨⚙⏱ 等）与 U+1F000+（emoji）。"""
+    return "".join(c for c in s
+                   if not (ord(c) >= 0x1F000 or 0x2000 <= ord(c) <= 0x2BFF))
+
+
+# 加载后统一清洗全部文案（覆盖菜单、气泡、按钮等所有键，含列表）
+TR = {lang: {_k: (_scrub_symbols(_v) if isinstance(_v, str)
+                  else [_scrub_symbols(x) for x in _v]
+                  if isinstance(_v, list) else _v)
+              for _k, _v in tab.items()}
+      for lang, tab in TR.items()}
+
 
 # 官方 Clippy 动画名（clippyjs/clippy.js）
 ANIM_IDLE = "Idle1_1"
@@ -972,6 +989,8 @@ class ClippyPet:
         self._on_done = None
         self._after_anim = None
         self._idle_action_job = None   # 待机小动作穿插定时器
+        self._idle_action_job_end = None  # 穿插动作展示时长/优雅收尾定时器
+        self._idle_action = None       # 当前穿插动作名
 
         # 番茄钟
         self.pomo_work_min = self._s.get("pomo_work_min", POMO_WORK_MIN)
@@ -1347,16 +1366,47 @@ class ClippyPet:
 
     # ---------- 资源加载 ----------
     def _fix_edges(self, im):
-        """修复透明窗口紫边：
+        """平滑边缘（抗锯齿，配合色键透明）：
         1) 用 RGBa 中间模式缩放，避免半透明边缘颜色被稀释产生色偏；
-        2) alpha 阈值化到 0/255，消除半透明像素与 magenta 背景的混合。
+        2) 对 alpha 轻高斯模糊柔化硬边台阶；
+        3) 掩码约束：仅原本非透明的像素可能成为前景，防止纯背景
+           像素被模糊抬升成边缘黑点；
+        4) 阈值化 + 去孤立像素（黑点/白点毛刺）。
         """
         if self.zoom != 1:
             im = im.convert("RGBa").resize(self.size, Image.LANCZOS)
             im = im.convert("RGBA")
-        alpha = im.getchannel("A").point(lambda v: 255 if v >= 110 else 0)
+        orig = im.getchannel("A")
+        # 方案1：模糊平滑边缘
+        alpha = orig.filter(ImageFilter.GaussianBlur(1.0))
+        alpha = alpha.point(lambda v: 255 if v >= 70 else 0)
+        # 掩码约束：只保留原本非透明像素（消除背景像素被抬升的黑点）
+        mask = orig.point(lambda v: 255 if v > 0 else 0)
+        alpha = ImageChops.multiply(alpha, mask)
+        # 方案2：去孤立像素（前景中的透明孤岛 / 背景中的前景孤点）
+        alpha = self._remove_isolated_alpha(alpha)
         im.putalpha(alpha)
         return im
+
+    @staticmethod
+    def _remove_isolated_alpha(alpha):
+        """去除二值 alpha 中的孤立单像素（黑点/白点毛刺）：
+        8 邻域全相反则翻转该像素。保留连续的 1px 细线（有邻居）。"""
+        a = alpha.load()
+        w, h = alpha.size
+        new = alpha.copy()
+        b = new.load()
+        for y in range(1, h - 1):
+            for x in range(1, w - 1):
+                nb = (a[x-1, y-1], a[x, y-1], a[x+1, y-1],
+                      a[x-1, y], a[x+1, y],
+                      a[x-1, y+1], a[x, y+1], a[x+1, y+1])
+                v = a[x, y]
+                if v == 255 and all(p == 0 for p in nb):
+                    b[x, y] = 0      # 孤立前景点（白毛刺）→ 删
+                elif v == 0 and all(p == 255 for p in nb):
+                    b[x, y] = 255    # 前景中的透明孤岛（黑点）→ 补
+        return new
 
     def _load_assets(self):
         """按当前皮肤加载动画定义并解析语义映射（皮肤自适应）。"""
@@ -1560,6 +1610,12 @@ class ClippyPet:
         """回到主待机：主待机动画循环播放作为稳定基底（连续呼吸），
         并调度低频小动作穿插。所有交互动作播完都回到这里，
         保证待机视觉连续、切换不再频繁。"""
+        if self._idle_action_job_end:
+            try:
+                self.root.after_cancel(self._idle_action_job_end)
+            except Exception:
+                pass
+            self._idle_action_job_end = None
         if self._quitting:
             return
         self.play(self._idle_anim, loop=True, speed=IDLE_ANIM_SPEED)
@@ -1589,8 +1645,28 @@ class ClippyPet:
         pool = [a for a in self._idle_anims if a != self._idle_anim]
         if not pool:
             pool = self._idle_anims
-        self.play(random.choice(pool), on_done=self._idle_next,
-                  speed=IDLE_ANIM_SPEED)
+        action = random.choice(pool)
+        self._idle_action = action
+        self.play(action, on_done=self._idle_next, speed=IDLE_ANIM_SPEED)
+        # 展示时长定时器：到时触发优雅退出（_exiting → 走当前帧的
+        # exitBranch 收尾序列恢复姿态），避免长动作（如 IdleSnooze
+        # 瘫倒 13s）自然播完从结尾姿态硬切回主待机。
+        if self._idle_action_job_end:
+            try:
+                self.root.after_cancel(self._idle_action_job_end)
+            except Exception:
+                pass
+        self._idle_action_job_end = self.root.after(
+            random.randint(4000, 6000), self._idle_end_check)
+
+    def _idle_end_check(self):
+        """穿插动作展示时长到：标记优雅退出，等待收尾帧恢复姿态。"""
+        self._idle_action_job_end = None
+        if self._quitting:
+            return
+        # 仅当仍在当前穿插动作且尚未退出时触发，避免干扰主待机/其他动画
+        if self._anim_name == self._idle_action and not self._exiting:
+            self._exiting = True
 
     def _start_loops(self):
         self._idle_next()

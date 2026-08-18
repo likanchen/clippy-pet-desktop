@@ -63,12 +63,12 @@ assert pet.lang == "zh"
 pet._toggle_lang()
 pet.root.update()
 assert pet.lang == "en"
-assert pet.tr("menu_water") == "\U0001F4A7Water reminder"
+assert pet.tr("menu_water") == "Water reminder"
 assert pet.tr("btn_snooze", n=5) == "5 min later"
 pet._toggle_lang()
 pet.root.update()
 assert pet.lang == "zh"
-assert pet.tr("menu_water") == "\U0001F4A7喝水提醒"
+assert pet.tr("menu_water") == "喝水提醒"
 print("LANG OK")
 
 # 7. 动作映射（描述与官方动画匹配）
