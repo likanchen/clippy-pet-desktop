@@ -1,10 +1,8 @@
 # -*- coding: utf-8 -*-
-"""待机动画逻辑验证：主待机稳定循环 + 低频小动作穿插（全皮肤）。"""
+"""待机 1:1 验证：纯随机 idle + 官方帧时长自然播完 + 播完再随机。"""
 import os
-import random
 import sys
 import tempfile
-import time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import clippy_pet as cp
@@ -13,56 +11,36 @@ cp.SETTINGS_FILE = os.path.join(tempfile.mkdtemp(), "idle.json")
 pet = cp.ClippyPet()
 pet.root.update()
 
-# 1. 启动后：主待机动画循环播放 + 穿插定时器已调度 + 官方速度（speed=1.0）
-assert pet._anim_name == pet._idle_anim, (pet._anim_name, pet._idle_anim)
-assert pet._loop is True, "主待机应循环播放"
-assert pet._idle_action_job is not None, "穿插定时器未调度"
-assert pet._anim_speed == cp.IDLE_ANIM_SPEED, \
-    "主待机速度系数: %s" % pet._anim_speed
-print("[1] 主待机循环 + 定时器 + 速度%.1fx  OK: %s" %
-      (pet._anim_speed, pet._idle_anim))
+# 1. 启动后：播放的是 idle 动画，官方帧时长（speed=1.0）
+assert pet._anim_name.startswith("Idle"), pet._anim_name
+assert pet._anim_speed == 1.0, pet._anim_speed
+print("[1] 随机 idle:", pet._anim_name, "官方帧时长(1.0x) OK")
 
-# 2. 间隔范围 8~16 秒
-lo, hi = 1 << 30, 0
-for _ in range(60):
-    d = random.randint(cp.IDLE_ACTION_MIN_MS, cp.IDLE_ACTION_MAX_MS)
-    lo, hi = min(lo, d), max(hi, d)
-assert lo >= 8000 and hi <= 16000, (lo, hi)
-print("[2] 间隔范围 [%d, %d] ms  OK" % (lo, hi))
-
-# 3. 手动触发穿插：播放小动作（非主待机），播完回主待机
-pet._idle_play_action()
-pet.root.update()
-assert pet._is_idle() and pet._anim_name != pet._idle_anim, \
-    "穿插应播放非主待机的小动作: %s" % pet._anim_name
-print("[3] 穿插动作:", pet._anim_name, " OK")
-
-# 4. 穿插播完 → 回到主待机循环 + 重新调度
-for _ in range(150):
+# 2. 播完自然换下一个 idle（推进中始终 idle，且见过多个）
+seen = set()
+for _ in range(1500):
     pet._step()
-    if pet._anim_name == pet._idle_anim and pet._loop:
+    if pet._anim_name != None:
+        if not pet._is_idle():
+            break
+        seen.add(pet._anim_name)
+    if len(seen) >= 3:
         break
-assert pet._anim_name == pet._idle_anim and pet._loop, \
-    "穿插后未回到主待机: %s" % pet._anim_name
-assert pet._idle_action_job is not None, "穿插后未重新调度"
-print("[4] 穿插后回主待机 + 重新调度  OK")
+assert len(seen) >= 2, "应能连续播放多个 idle: %d" % len(seen)
+assert pet._is_idle(), "应始终处于 idle: %s" % pet._anim_name
+print("[2] 连续播放 idle 数:", len(seen), "OK")
+assert not hasattr(pet, "_idle_pool"), "去重池字段应已移除"
+print("[3] 无去重池字段 OK")
 
-# 5. 非待机状态（交互中）触发穿插 → 不打断，重新调度；交互动画保持官方速度
+# 3. 交互动画播完回待机（纯随机 idle）
 pet.play_semantic("wave", on_done=pet._idle_next)
 pet.root.update()
-assert not pet._is_idle(), "wave 应在播放"
-assert pet._anim_speed == 1.0, "交互动画应保持官方速度: %s" % pet._anim_speed
-pet._idle_action_job = None   # 模拟定时器已触发
-pet._idle_play_action()
-pet.root.update()
-assert pet._anim_name == pet.act.get("wave", pet._idle_anim), \
-    "交互中不应被穿插打断: %s" % pet._anim_name
-assert pet._idle_action_job is not None, "交互中应重新调度穿插"
-print("[5] 交互中穿插不打断 + 交互官方速度  OK")
+assert not pet._is_idle()
+for _ in range(400):
+    pet._step()
+    if pet._is_idle():
+        break
+assert pet._is_idle(), pet._anim_name
+print("[4] 交互后回随机待机 OK")
 
-# 6. quit 清理定时器
-pet.quit()
-assert pet._idle_action_job is None
-print("[6] quit 清理  OK")
-
-print("\nIDLE OK")
+print("\nIDLE 1:1 OK")

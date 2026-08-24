@@ -18,33 +18,29 @@ for sid, label in cp.SKINS:
         pet._step()
         pet.root.update()
         if (not pet._skin_switching
-                and pet._anim_name == pet._idle_anim
-                and pet._loop):
+                and pet._anim_name.startswith("Idle")):
             break
     pet.root.update()
     assert not pet._skin_switching, (sid, "换肤过渡未完成")
-    assert pet._anim_name == pet._idle_anim, (sid, pet._anim_name)
-    assert pet._loop is True, (sid, "主待机未循环")
-    assert pet._idle_action_job is not None, (sid, "穿插定时器未调度")
+    assert pet._anim_name.startswith("Idle"), (sid, pet._anim_name)
+    assert not hasattr(pet, "_idle_pool"), (sid, "去重池应已移除")
+    assert not hasattr(pet, "_idle_action_job"), (sid, "穿插字段残留")
 
-    # 穿插小动作（若该皮肤除主待机外还有其它 idle 动作）
-    pool = [a for a in pet._idle_anims if a != pet._idle_anim]
-    if pool:
-        pet._idle_play_action()
-        pet.root.update()
-        # 穿插后仍在待机态（极短动作可能已瞬间播完回到主待机）
-        assert pet._is_idle(), (sid, pet._anim_name)
-        # 最终回到主待机循环
-        for _ in range(250):
-            pet._step()
-            if pet._anim_name == pet._idle_anim and pet._loop:
+    # 官方纯随机：推进中持续播放 idle，应见过多个不同 idle
+    seen = {pet._anim_name}
+    prev = pet._anim_name
+    for _ in range(1500):
+        pet._step()
+        if pet._anim_name != prev:
+            assert pet._is_idle(), (sid, "应始终 idle")
+            seen.add(pet._anim_name)
+            prev = pet._anim_name
+            if len(seen) >= 3:
                 break
-        assert pet._anim_name == pet._idle_anim, (sid, "未回主待机")
-    else:
-        print("  %s 无额外 idle 动作（仅主待机）" % sid)
+    assert 1 <= len(seen) <= max(len(pet._idle_anims), 1), (sid, len(seen))
 
-    print("%-8s 主待机=%-14s idle池=%d  OK" %
-          (sid, pet._idle_anim, len(pet._idle_anims)))
+    print("%-8s idle=%d 已见=%d  OK" %
+          (sid, len(pet._idle_anims), len(seen)))
 
 pet._do_exit()
 print("\nALL-SKIN IDLE OK")

@@ -1,5 +1,6 @@
 # -*- mode: python ; coding: utf-8 -*-
-
+# onefile 打包：素材与运行时全部打进单个 exe
+# settings.json 由程序在运行时写入 exe 旁（APP_DIR = sys.executable 目录）
 
 a = Analysis(
     ['clippy_pet.py'],
@@ -19,9 +20,10 @@ pyz = PYZ(a.pure)
 exe = EXE(
     pyz,
     a.scripts,
+    a.binaries,
+    a.datas,
     [],
-    exclude_binaries=True,
-    name='ClippyPet-v0.2.1',
+    name='ClippyPet-v0.2.2',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -33,13 +35,4 @@ exe = EXE(
     codesign_identity=None,
     entitlements_file=None,
     icon=['clippy.ico'],
-)
-coll = COLLECT(
-    exe,
-    a.binaries,
-    a.datas,
-    strip=False,
-    upx=True,
-    upx_exclude=[],
-    name='ClippyPet-v0.2.1',
 )

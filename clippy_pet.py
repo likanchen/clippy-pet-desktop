@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Clippy 桌面宠物 v0.2.1 —— 官方 Clippy 素材逐帧动画 + 换肤/提醒/番茄钟/快捷键
+Clippy 桌面宠物 v0.2.2 —— 官方 Clippy 素材逐帧动画 + 换肤/提醒/番茄钟/快捷键
 素材: smore-inc/clippy.js 官方 Clippy agent (map.png 精灵表 + agent.js 动画定义)
 功能: 喝水提醒 / 锻炼提醒 / 番茄钟 / 交互动作 / 拖动 / 右键菜单 / 中英文切换。
 运行: python clippy_pet.py    （依赖 Pillow：pip install Pillow）
@@ -99,10 +99,9 @@ SETTINGS_FILE = os.path.join(APP_DIR, "settings.json")
 
 MAX_ANIM_MS = 5000            # 非循环动画最长播放时长（超时优雅退出）
 MAX_EXIT_STEPS = 30           # 退出序列最大帧数（防二次循环）
-IDLE_ACTION_MIN_MS = 8000     # 待机小动作穿插最小间隔
-IDLE_ACTION_MAX_MS = 16000    # 待机小动作穿插最大间隔
 IDLE_ANIM_SPEED = 1.0         # 待机动画帧时长系数（1.0=官方速度，勿过大否则卡顿）
 MAX_FRAME_CACHE = 200         # 帧缓存 LRU 上限（防内存回涨）
+FULL_ANIM_LIMIT = 30000       # 完整动画（进入/退出/换肤）极长兜底，避免卡死
 
 # 全局快捷键 -> 动画（默认映射，可在「快捷键动画设置」中编辑）
 DEFAULT_HOTKEYS = {
@@ -213,8 +212,14 @@ TR = {
             "你好呀！我是你的回形针助手。\n我会定时提醒你喝水和活动哦～",
             "看起来你在努力工作呢！\n别忘了照顾好自己。",
             "需要帮忙吗？\n右键我可以设置提醒、开番茄钟。",
+            "新的一天，活力满满！\n开始专注前，先喝口水吧。",
+            "我在这里陪你工作～\n累了就站起来伸个懒腰。",
+            "番茄钟是个好工具！\n右键我开始一个专注 25 分钟的挑战吧。",
+            "记得多喝水哦，\n我可是你的私人健康管家。",
+            "今天也要加油！\n有任何需要，右键随时找我。",
+            "屏幕盯久了容易累，\n休息一下，看看窗外吧。",
         ],
-        "about": "Clippy 桌面宠物 v0.2.1\n"
+        "about": "Clippy 桌面宠物 v0.2.2\n"
                  "官方 Clippy 素材逐帧动画\n"
                  "素材来源: smore-inc/clippy.js（MIT）\n"
                  "Python/tkinter + Pillow 打造。",
@@ -306,8 +311,14 @@ TR = {
             "Hi! I'm your paperclip assistant.\nI'll remind you to drink water and move!",
             "Looks like you're working hard!\nDon't forget to take care of yourself.",
             "Need help? Right-click me for\nreminders, actions and Pomodoro.",
+            "A fresh start, full of energy!\nHave a sip of water before you begin.",
+            "I'm here with you while you work.\nStretch your legs when you're tired.",
+            "Pomodoro is a great tool!\nRight-click to start a 25-minute focus session.",
+            "Remember to stay hydrated,\nI'm your personal health buddy.",
+            "Keep it up today!\nRight-click me anytime you need something.",
+            "Staring at the screen too long is tiring.\nTake a break and look away.",
         ],
-        "about": "Clippy Desktop Pet v0.2.1\n"
+        "about": "Clippy Desktop Pet v0.2.2\n"
                  "Official Clippy sprite animations\n"
                  "Sprites: smore-inc/clippy.js (MIT)\n"
                  "Built with Python/tkinter + Pillow.",
@@ -988,7 +999,6 @@ class ClippyPet:
         self._loop = False
         self._on_done = None
         self._after_anim = None
-        self._idle_action_job = None   # 待机小动作穿插定时器
 
         # 番茄钟
         self.pomo_work_min = self._s.get("pomo_work_min", POMO_WORK_MIN)
@@ -1440,11 +1450,11 @@ class ClippyPet:
         return im
 
     # ---------- 动画引擎（官方 Animator branching 逻辑） ----------
-    def play(self, action, loop=False, on_done=None, speed=1.0):
+    def play(self, action, loop=False, on_done=None, speed=1.0, full=False):
         """action 为官方动画名；loop=True 无回调时循环；on_done 播完后回调。
         完整支持官方 branching（随机分支跳转）与 exitBranch。
-        speed>1 放慢帧时长（用于待机动画的舒缓节奏），
-        交互/提醒/番茄钟等保持官方速度（speed=1.0）。"""
+        speed>1 放慢帧时长；full=True 表示完整动画（进入/退出/换肤），
+        豁免超时保险截断（ATCH 极长兜底仍保留）。"""
         if action not in self.animations:
             return
         if self._after_anim:
@@ -1463,16 +1473,18 @@ class ClippyPet:
         self._anim_ms = 0
         self._exit_steps = 0
         self._anim_speed = speed
+        self._full_anim = full
         self._loop = loop
         self._on_done = on_done
         self._step()
 
-    def play_semantic(self, name, loop=False, on_done=None):
-        """按语义名播放（见 ACT/SEM_ALT 皮肤自适应映射）。"""
+    def play_semantic(self, name, loop=False, on_done=None, full=False):
+        """按语义名播放（见 ACT/SEM_ALT 皮肤自适应映射）。
+        full=True 表示完整动画（进入/退出/换肤），豁免超时保险截断。"""
         if name in self.animations:
-            self.play(name, loop=loop, on_done=on_done)
+            self.play(name, loop=loop, on_done=on_done, full=full)
         else:
-            self.play(self._a(name), loop=loop, on_done=on_done)
+            self.play(self._a(name), loop=loop, on_done=on_done, full=full)
 
     def _a(self, sem):
         """语义 -> 皮肤解析后的动画名；缺失回退到待机动画。"""
@@ -1517,11 +1529,14 @@ class ClippyPet:
         """动画超时/超帧时触发优雅退出：置 _exiting 后继续正常播放，
         播到带 exitBranch 的帧时由 _next_idx 跳转退出序列自然收尾；
         仅当动画根本没有退出分支（或退出序列超长）时才强制收尾。
+        full=True 的动画（进入/退出/换肤）豁免超时，仅保留极长兜底。
         返回 True 表示动画已在此处结束。"""
         if self._loop:
             return False
-        if not self._exiting and (self._steps > len(self._seq) * 2 + 10
-                                  or self._anim_ms > MAX_ANIM_MS):
+        limit = FULL_ANIM_LIMIT if self._full_anim else MAX_ANIM_MS
+        over_frame = (not self._full_anim
+                      and self._steps > len(self._seq) * 2 + 10)
+        if not self._exiting and (over_frame or self._anim_ms > limit):
             self._exiting = True
         if self._exiting:
             self._exit_steps += 1
@@ -1578,40 +1593,16 @@ class ClippyPet:
                 self._idle_next()
 
     def _idle_next(self):
-        """回到主待机：主待机动画循环播放作为稳定基底（连续呼吸），
-        并调度低频小动作穿插。所有交互动作播完都回到这里，
-        保证待机视觉连续、切换不再频繁。"""
+        """官方 _getIdleAnimation 1:1：从该皮肤全部 Idle 动画纯随机选一个播放，
+        按官方帧时长自然播完，播完再纯随机选下一个（无去重、无 skip，
+        与 clippy.js 官方 Agent 行为一致）。交互动作播完也回到这里。"""
         if self._quitting:
             return
-        self.play(self._idle_anim, loop=True, speed=IDLE_ANIM_SPEED)
-        self._schedule_idle_action()
-
-    def _schedule_idle_action(self):
-        """调度下一次待机小动作（8~16 秒随机）。"""
-        if self._idle_action_job:
-            try:
-                self.root.after_cancel(self._idle_action_job)
-            except Exception:
-                pass
-        self._idle_action_job = self.root.after(
-            random.randint(IDLE_ACTION_MIN_MS, IDLE_ACTION_MAX_MS),
-            self._idle_play_action)
-
-    def _idle_play_action(self):
-        """穿插一次待机小动作（眨眼/摇摆/挠头等），播完回主待机。"""
-        self._idle_action_job = None
-        if self._quitting:
+        if not self._idle_anims:
+            self.play(self._idle_anim, loop=True, speed=IDLE_ANIM_SPEED)
             return
-        if not self._is_idle():
-            # 当前不在待机（交互/番茄钟/换肤中）→ 重新调度
-            self._schedule_idle_action()
-            return
-        # 小动作池：排除主待机动画本身
-        pool = [a for a in self._idle_anims if a != self._idle_anim]
-        if not pool:
-            pool = self._idle_anims
-        self.play(random.choice(pool), on_done=self._idle_next,
-                  speed=IDLE_ANIM_SPEED)
+        anim = random.choice(self._idle_anims)
+        self.play(anim, on_done=self._idle_next, speed=IDLE_ANIM_SPEED)
 
     def _start_loops(self):
         self._idle_next()
@@ -2008,7 +1999,8 @@ class ClippyPet:
         self._skin_switching = True
         self._pending_skin = sid
         # 旧皮肤播放「再见」动作，播完再切换
-        self.play_semantic("goodbye", on_done=self._do_switch_skin)
+        self.play_semantic("goodbye", on_done=self._do_switch_skin,
+                          full=True)
 
     def _do_switch_skin(self):
         """再见动画播完：加载新皮肤、重建窗口与菜单，播放「打招呼」。"""
@@ -2024,7 +2016,7 @@ class ClippyPet:
         self.canvas.config(width=w, height=h)
         self.root.geometry(f"{w}x{h}+{cx - w // 2}+{cy - h // 2}")
         # 新皮肤播放「打招呼」动作后自然回待机
-        self.play_semantic("greet", on_done=self._idle_next)
+        self.play_semantic("greet", on_done=self._idle_next, full=True)
         self._save_settings()
         name = dict(SKINS).get(sid, sid)
         self.say(self.tr("skin_switched", skin=name), auto_hide_ms=3000)
@@ -2055,7 +2047,7 @@ class ClippyPet:
 
     def _greet(self):
         self.play(self._a("greet"),
-                  on_done=self._idle_next)
+                  on_done=self._idle_next, full=True)
         self.say(random.choice(self.tr("greet_msgs")))
 
     def _about(self):
@@ -2068,12 +2060,6 @@ class ClippyPet:
             return
         self._quitting = True
         self._hk_running = False   # 停止全局按键轮询线程
-        if self._idle_action_job:
-            try:
-                self.root.after_cancel(self._idle_action_job)
-            except Exception:
-                pass
-            self._idle_action_job = None
         if self.bubble is not None:
             try:
                 self.bubble.hide()
@@ -2087,7 +2073,7 @@ class ClippyPet:
                     self.root.after_cancel(job)
                 except Exception:
                     pass
-        self.play_semantic("goodbye", on_done=self._do_exit)
+        self.play_semantic("goodbye", on_done=self._do_exit, full=True)
 
     def _do_exit(self):
         try:
