@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Clippy 桌面宠物 v0.2.2 —— 官方 Clippy 素材逐帧动画 + 换肤/提醒/番茄钟/快捷键
+Clippy 桌面宠物 v0.2.3 —— 官方 Clippy 素材逐帧动画 + 换肤/提醒/番茄钟/快捷键
 素材: smore-inc/clippy.js 官方 Clippy agent (map.png 精灵表 + agent.js 动画定义)
 功能: 喝水提醒 / 锻炼提醒 / 番茄钟 / 交互动作 / 拖动 / 右键菜单 / 中英文切换。
 运行: python clippy_pet.py    （依赖 Pillow：pip install Pillow）
@@ -219,7 +219,7 @@ TR = {
             "今天也要加油！\n有任何需要，右键随时找我。",
             "屏幕盯久了容易累，\n休息一下，看看窗外吧。",
         ],
-        "about": "Clippy 桌面宠物 v0.2.2\n"
+        "about": "Clippy 桌面宠物 v0.2.3\n"
                  "官方 Clippy 素材逐帧动画\n"
                  "素材来源: smore-inc/clippy.js（MIT）\n"
                  "Python/tkinter + Pillow 打造。",
@@ -318,7 +318,7 @@ TR = {
             "Keep it up today!\nRight-click me anytime you need something.",
             "Staring at the screen too long is tiring.\nTake a break and look away.",
         ],
-        "about": "Clippy Desktop Pet v0.2.2\n"
+        "about": "Clippy Desktop Pet v0.2.3\n"
                  "Official Clippy sprite animations\n"
                  "Sprites: smore-inc/clippy.js (MIT)\n"
                  "Built with Python/tkinter + Pillow.",
@@ -971,6 +971,8 @@ class ClippyPet:
 
         # 显示选项
         self._dnd_active = False    # 当前是否因全屏而隐藏
+        self._dnd_last_fg = None    # 上次检测的前台 (hwnd, rect) 缓存
+        self._dnd_last_result = False
         self.autostart_on = _autostart_enabled()   # 开机自启动
 
         # 全局快捷键动画
@@ -999,6 +1001,8 @@ class ClippyPet:
         self._loop = False
         self._on_done = None
         self._after_anim = None
+        self._thumb_cache = {}     # 换肤菜单缩略图缓存（只生成一次）
+        self._last_drawn = None    # 最近绘制到 Canvas 的帧 key（防重复重绘）
 
         # 番茄钟
         self.pomo_work_min = self._s.get("pomo_work_min", POMO_WORK_MIN)
@@ -1072,7 +1076,7 @@ class ClippyPet:
 
     def _hk_loop(self):
         while self._hk_running:
-            time.sleep(0.15)
+            time.sleep(0.25)
             try:
                 self._hk_tick()
             except Exception:
@@ -1306,7 +1310,18 @@ class ClippyPet:
             my = int(self.root.winfo_id())
             fg = user32.GetForegroundWindow()
             if fg and fg != my:
-                return self._hwnd_is_fullscreen(fg)
+                # 前台快速变化检测：前台句柄与矩形均未变 → 结果不变，
+                # 跳过 DWM/显示器查询（消除每 2 秒轮询的 Win32 开销）。
+                fr = wintypes.RECT()
+                if user32.GetWindowRect(fg, ctypes.byref(fr)):
+                    key = (fg, fr.left, fr.top, fr.right, fr.bottom)
+                    if key == self._dnd_last_fg:
+                        return self._dnd_last_result
+                    self._dnd_last_fg = key
+                    result = self._hwnd_is_fullscreen(fg)
+                    self._dnd_last_result = result
+                    return result
+                return False
             # 前台是 clippy（或不可用）：遍历 Z 序顶层窗口。
             # 注意不能 GetWindow(NULL, GW_HWNDFIRST)——hWnd 为 NULL 时
             # 该调用行为未定义（实测返回 0）；须用 GetTopWindow(NULL)
@@ -1426,6 +1441,7 @@ class ClippyPet:
         全部数百帧 → 大幅降低内存占用与启动 IO。
         缩放/换肤后调用（self.size / self.frames_dir 已更新）。"""
         self._cache = collections.OrderedDict()
+        self._last_drawn = None   # 缓存已重建（缩放/换肤），强制下一帧重绘
         # 空帧占位（官方 images=[] 时显示空白）
         blank = Image.new("RGBA", self.size, (0, 0, 0, 0))
         self._blank_img = ImageTk.PhotoImage(blank)
@@ -1571,10 +1587,17 @@ class ClippyPet:
         f = self._cur
         delay = int(f["d"] * self._anim_speed)   # 待机放慢：帧时长 × 系数
         self._anim_ms += delay
-        if f["f"]:
-            self.canvas.itemconfig(self._img_item, image=self._photo(f["f"]))
-        else:
-            self.canvas.itemconfig(self._img_item, image=self._blank_img)
+        # 同帧跳过重绘：帧 key 未变（含空帧）时跳过 itemconfig，
+        # 减少 Canvas 无谓重绘（loop 重播首帧等场景）
+        key = f["f"]
+        if key != self._last_drawn:
+            if key:
+                self.canvas.itemconfig(self._img_item,
+                                       image=self._photo(key))
+            else:
+                self.canvas.itemconfig(self._img_item,
+                                       image=self._blank_img)
+            self._last_drawn = key
         self._after_anim = self.root.after(delay, self._step)
         if changed and at_last:
             if self._on_done:
@@ -1965,7 +1988,11 @@ class ClippyPet:
         self._save_settings()
 
     def _skin_thumb(self, sid, size=(44, 33)):
-        """生成皮肤缩略图：取该皮肤待机动画第一帧，等比缩放居中。"""
+        """生成皮肤缩略图：取该皮肤待机动画第一帧，等比缩放居中。
+        缓存复用：同一皮肤只生成一次（切换语言/换肤重建菜单时直接复用）。"""
+        cached = self._thumb_cache.get(sid)
+        if cached is not None:
+            return cached
         try:
             sdir = os.path.join(DATA_DIR, "assets", sid)
             with open(os.path.join(sdir, "animations.json"),
@@ -1989,7 +2016,9 @@ class ClippyPet:
         im = im.resize((nw, nh), Image.LANCZOS)
         canvas = Image.new("RGBA", size, (0, 0, 0, 0))
         canvas.paste(im, ((size[0] - nw) // 2, (size[1] - nh) // 2), im)
-        return ImageTk.PhotoImage(canvas)
+        thumb = ImageTk.PhotoImage(canvas)
+        self._thumb_cache[sid] = thumb
+        return thumb
 
     def _set_skin(self, sid):
         """切换皮肤（带过渡动画）：旧皮肤播再见 → 新皮肤播打招呼。
