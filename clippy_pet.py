@@ -169,23 +169,23 @@ TR = {
         "water_tips": [
             "看起来你已经盯着屏幕好一会儿了。\n要去接杯水喝吗？",
             "温馨提示：身体缺水会让注意力下降哦，\n喝口水吧！",
-            "咕噜咕噜…… 我虽然是回形针，\n也知道人需要喝水！",
+"咕噜咕噜 我虽然是回形针，\n也知道人需要喝水！",
             "喝水时间到！一天 8 杯水，\n你完成几杯啦？",
         ],
         "ex_tips": [
             "久坐伤身！站起来伸展一下，\n活动活动脖子和肩膀吧。",
             "该起来动一动啦！\n走两步、看看远处，眼睛也需要休息。",
-            "我可以一辈子保持一个姿势，\n但你不行——起来拉伸一下！",
+"我可以一辈子保持一个姿势，\n但你不行起来拉伸一下！",
             "锻炼提醒：做 5 个深蹲，\n或者绕桌子走一圈？",
         ],
         "btn_done": "喝过了 ", "btn_snooze": "{n}分钟后",
         "btn_off": "今天别再提醒", "btn_ex_done": "已活动 ",
         "btn_pomo_next": "继续工作", "btn_pomo_stop": "结束", "btn_ok": "好",
         "pomo_running": "番茄钟已经在走啦！\n右键菜单可以停止。",
-        "pomo_start": "🍅 番茄钟启动！专注工作 {n} 分钟。\n我会在这段时间里看着你哦～",
+"pomo_start":"番茄钟启动！专注工作 {n} 分钟。\n我会在这段时间里看着你哦～",
         "pomo_break": "工作辛苦啦！休息 {n} 分钟。\n喝口水、看看远处吧。",
-        "pomo_done": "🍅 第 {n} 个番茄完成！\n要继续下一轮吗？",
-        "pomo_stopped": "番茄钟已停止。\n本轮共完成 {n} 个 🍅",
+"pomo_done":"第 {n} 个番茄完成！\n要继续下一轮吗？",
+"pomo_stopped":"番茄钟已停止。\n本轮共完成 {n} 个",
         "pomo_stop_first": "请先停止当前的番茄钟，再修改设置。",
         "settings_title": "番茄钟设置",
         "settings_work": "工作时长（分钟）",
@@ -200,14 +200,14 @@ TR = {
         "ex_settings_saved": "锻炼提醒间隔已设为 {n} 分钟",
         "settings_saved": "番茄钟已设置：\n工作 {w} 分钟 / 休息 {b} 分钟。",
         "btn_cancel": "取消",
-        "water_done_msg": "好样的！保持水分，头脑更清醒 💧",
+"water_done_msg":"好样的！保持水分，头脑更清醒",
         "snooze_msg": "好的，{n} 分钟后我再来叫你。",
         "water_off_msg": "明白，今天不再提醒喝水。\n（右键我可以重新开启）",
-        "ex_done_msg": "动起来真棒！给你点赞 👍",
+"ex_done_msg":"动起来真棒！给你点赞",
         "ex_snooze_msg": "好，{n} 分钟后再提醒你活动。",
         "ex_off_msg": "好的，今天不再提醒锻炼。\n（右键我可以重新开启）",
-        "water_on_msg": "喝水提醒已开启 💧",
-        "ex_on_msg": "锻炼提醒已开启 🏃",
+"water_on_msg":"喝水提醒已开启",
+"ex_on_msg":"锻炼提醒已开启",
         "greet_msgs": [
             "你好呀！我是你的回形针助手。\n我会定时提醒你喝水和活动哦～",
             "看起来你在努力工作呢！\n别忘了照顾好自己。",
@@ -223,7 +223,7 @@ TR = {
                  "官方 Clippy 素材逐帧动画\n"
                  "素材来源: smore-inc/clippy.js（MIT）\n"
                  "Python/tkinter + Pillow 打造。",
-        "lang_switched": "语言已切换为简体中文 ✓",
+"lang_switched":"语言已切换为简体中文",
     },
     "en": {
         "bubble_title": "Clippy Assistant",
@@ -268,23 +268,23 @@ TR = {
         "water_tips": [
             "Looks like you've been staring at the screen.\nTime to grab some water?",
             "Heads up: dehydration hurts focus.\nTake a sip!",
-            "Gulp gulp… I'm a paperclip,\nbut even I know humans need water!",
-            "Water break! 8 glasses a day —\nhow many have you had?",
+"Gulp gulp I'm a paperclip,\nbut even I know humans need water!",
+"Water break! 8 glasses a day \nhow many have you had?",
         ],
         "ex_tips": [
             "Sitting too long is bad! Stand up,\nstretch your neck and shoulders.",
             "Time to move around!\nWalk a few steps and look into the distance.",
-            "I can hold one pose forever,\nbut you can't — get up and stretch!",
+"I can hold one pose forever,\nbut you can't  get up and stretch!",
             "Exercise alert: do 5 squats,\nor walk around your desk?",
         ],
         "btn_done": "Done ", "btn_snooze": "{n} min later",
         "btn_off": "Not today", "btn_ex_done": "Moved ",
         "btn_pomo_next": "Next round", "btn_pomo_stop": "Stop", "btn_ok": "OK",
         "pomo_running": "A Pomodoro is already running!\nRight-click to stop it.",
-        "pomo_start": "🍅 Pomodoro started! Focus for {n} minutes.\nI'll be watching you～",
+"pomo_start":"Pomodoro started! Focus for {n} minutes.\nI'll be watching you～",
         "pomo_break": "Great work! Take a {n}-minute break.\nDrink some water, look away.",
-        "pomo_done": "🍅 Pomodoro #{n} complete!\nStart another round?",
-        "pomo_stopped": "Pomodoro stopped.\n{n} 🍅 completed this session.",
+"pomo_done":"Pomodoro #{n} complete!\nStart another round?",
+"pomo_stopped":"Pomodoro stopped.\n{n}  completed this session.",
         "pomo_stop_first": "Please stop the running Pomodoro\nbefore changing the settings.",
         "settings_title": "Pomodoro Settings",
         "settings_work": "Work minutes",
@@ -299,14 +299,14 @@ TR = {
         "ex_settings_saved": "Exercise reminder interval set to {n} min",
         "settings_saved": "Pomodoro set:\n{w} min work / {b} min break.",
         "btn_cancel": "Cancel",
-        "water_done_msg": "Nice! Stay hydrated, stay sharp 💧",
+"water_done_msg":"Nice! Stay hydrated, stay sharp",
         "snooze_msg": "OK, I'll remind you in {n} minutes.",
         "water_off_msg": "Understood, no more water reminders today.\n(Right-click to re-enable)",
-        "ex_done_msg": "Great job moving! Thumbs up 👍",
+"ex_done_msg":"Great job moving! Thumbs up",
         "ex_snooze_msg": "OK, I'll remind you to move in {n} minutes.",
         "ex_off_msg": "OK, no more exercise reminders today.\n(Right-click to re-enable)",
-        "water_on_msg": "Water reminders on 💧",
-        "ex_on_msg": "Exercise reminders on 🏃",
+"water_on_msg":"Water reminders on",
+"ex_on_msg":"Exercise reminders on",
         "greet_msgs": [
             "Hi! I'm your paperclip assistant.\nI'll remind you to drink water and move!",
             "Looks like you're working hard!\nDon't forget to take care of yourself.",
@@ -322,7 +322,7 @@ TR = {
                  "Official Clippy sprite animations\n"
                  "Sprites: smore-inc/clippy.js (MIT)\n"
                  "Built with Python/tkinter + Pillow.",
-        "lang_switched": "Language switched to English ✓",
+"lang_switched":"Language switched to English",
     },
 }
 
@@ -440,7 +440,10 @@ class SpeechBubble(tk.Toplevel):
 
         # ---- 摆放（统一四方位 + 尾巴正对 Clippy）----
         sw, sh = self.winfo_screenwidth(), self.winfo_screenheight()
-        cw, ch = 248, 186
+        # 用 Clippy 实际窗口尺寸（默认 150% 缩放≠硬编码 248×186），
+        # 使尾巴正对 Clippy 中心
+        cw = master.winfo_width() or 248
+        ch = master.winfo_height() or 186
         if anchor:
             cx, cy = anchor
         else:
@@ -529,7 +532,6 @@ class SpeechBubble(tk.Toplevel):
 
 
 TAIL_LEN = 22              # 三角尾巴伸出长度（px）
-BUBBLE_W, BUBBLE_H = 300, 196
 BODY_X0, BODY_Y0, BODY_X1, BODY_Y1 = 4, 4, 296, 148
 MAGENTA = (255, 0, 255)     # 窗口透明键控色（-transparentcolor）
 
@@ -550,16 +552,22 @@ def _autostart_enabled():
 
 
 def _set_autostart(on):
-    """写/删注册表 Run 项：启用写入 pythonw 启动命令，禁用删除。"""
+    """写/删注册表 Run 项。源码运行：pythonw <脚本>；
+    打包版（frozen）：单 exe 自启直接指向 exe 本身
+    （__file__ 在 onefile 里指向临时解压目录，不能用）。"""
     import sys
     import winreg
     with winreg.OpenKey(winreg.HKEY_CURRENT_USER, AUTOSTART_KEY,
                         0, winreg.KEY_SET_VALUE) as k:
         if on:
-            pyw = os.path.join(os.path.dirname(sys.executable), "pythonw.exe")
-            if not os.path.exists(pyw):
-                pyw = sys.executable      # 回退：无 pythonw 时用当前解释器
-            cmd = '"%s" "%s"' % (pyw, os.path.abspath(__file__))
+            if getattr(sys, "frozen", False):
+                cmd = '"%s"' % sys.executable
+            else:
+                pyw = os.path.join(os.path.dirname(sys.executable),
+                                   "pythonw.exe")
+                if not os.path.exists(pyw):
+                    pyw = sys.executable      # 回退：无 pythonw 时用当前解释器
+                cmd = '"%s" "%s"' % (pyw, os.path.abspath(__file__))
             winreg.SetValueEx(k, AUTOSTART_NAME, 0, winreg.REG_SZ, cmd)
         else:
             try:
@@ -601,16 +609,24 @@ def _wrap_text(text, font, max_px):
     return lines
 
 
+_FONT_CACHE = {}     # 字体缓存：同字号只加载一次（弹气泡复用）
+
+
 def _load_font(size):
-    """加载系统中文/英文字体，失败回退默认字体。"""
+    """加载系统中文/英文字体，失败回退默认字体。结果按字号缓存。"""
+    if size in _FONT_CACHE:
+        return _FONT_CACHE[size]
     for path in ("C:/Windows/Fonts/msyh.ttc", "C:/Windows/Fonts/msyhbd.ttc",
                  "C:/Windows/Fonts/simhei.ttf", "C:/Windows/Fonts/simsun.ttc"):
         if os.path.exists(path):
             try:
-                return ImageFont.truetype(path, size)
+                font = ImageFont.truetype(path, size)
+                _FONT_CACHE[size] = font
+                return font
             except OSError:
                 continue
-    return ImageFont.load_default()
+    _FONT_CACHE[size] = ImageFont.load_default()
+    return _FONT_CACHE[size]
 
 
 def _draw_button(d, x1, y1, x2, y2, text, font):
@@ -781,7 +797,8 @@ def plan_bubble_placement(cx, cy, cw, ch, sw, sh):
     """带尾巴设置气泡的摆放：方位由 _pick_side 统一决策，
     再细化尾巴几何——尾巴尖紧贴 Clippy 对应边，正对 Clippy 中心。
     返回 (x, y, w, h, tail_edge, tail_pos)。"""
-    W, H = BUBBLE_W, BUBBLE_H
+    # 设置气泡固定 300×196（与渲染几何一致）
+    W, H = 300, 196
     TL = TAIL_LEN
     # 左右摆放时窗口更宽（含尾巴），判定用实际窗口宽
     side, _, _ = _pick_side(cx, cy, cw, ch, sw, sh, W + TL, H)
@@ -829,8 +846,11 @@ class SettingsDialog(tk.Toplevel):
         # 摆放规划：位置 + 窗口尺寸 + 尾巴方向/位置（正对 Clippy 中心）
         cx, cy = clippy_pos
         sw, sh = self.winfo_screenwidth(), self.winfo_screenheight()
+        # 用 Clippy 实际窗口尺寸（默认 150% 缩放≠248×186）对中尾巴
+        cw = self.master.winfo_width() or 248
+        ch = self.master.winfo_height() or 186
         bx, by, W, H, edge, tail_pos = plan_bubble_placement(
-            cx, cy, 248, 186, sw, sh)
+            cx, cy, cw, ch, sw, sh)
         self._tail_edge = edge
         self._tail_pos = tail_pos
         self._ox = TAIL_LEN if edge == "left" else 0
@@ -971,6 +991,7 @@ class ClippyPet:
 
         # 显示选项
         self._dnd_active = False    # 当前是否因全屏而隐藏
+        self._dnd_job = None        # 全屏检测的 after 链（quit 时可取消）
         self._dnd_last_fg = None    # 上次检测的前台 (hwnd, rect) 缓存
         self._dnd_last_result = False
         self.autostart_on = _autostart_enabled()   # 开机自启动
@@ -1154,6 +1175,13 @@ class ClippyPet:
         if self.dnd_on:
             self._check_fullscreen()
         else:
+            # 关闭免打扰时取消已排程的检测链，避免退出/切换后仍被轮询
+            if self._dnd_job:
+                try:
+                    self.root.after_cancel(self._dnd_job)
+                except Exception:
+                    pass
+                self._dnd_job = None
             self._dnd_restore()
         self._save_settings()
 
@@ -1175,7 +1203,7 @@ class ClippyPet:
                         pass
             else:
                 self._dnd_restore()
-            self.root.after(2000, self._check_fullscreen)
+            self._dnd_job = self.root.after(2000, self._check_fullscreen)
         else:
             self._dnd_restore()
 
@@ -2096,7 +2124,8 @@ class ClippyPet:
                 pass
             self.bubble = None
         # 取消全部定时器，避免退出动画期间触发提醒/番茄钟回调
-        for job in (self.water_job, self.exercise_job, self.pomo_job):
+        for job in (self.water_job, self.exercise_job, self.pomo_job,
+                    self._dnd_job):
             if job:
                 try:
                     self.root.after_cancel(job)
