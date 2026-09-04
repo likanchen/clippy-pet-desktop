@@ -58,7 +58,7 @@
 ## 🚀 运行
 
 ### 方式一：直接运行 exe（推荐）
-打包产物为 `dist/ClippyPet-v0.2.3.exe`（onefile 单文件），双击即可，**无需安装 Python**；单文件可直接运行。
+打包产物为 `dist/ClippyPet-v0.2.4.exe`（onefile 单文件），双击即可，**无需安装 Python**；单文件可直接运行。
 
 ### 方式二：源码运行
 ```bash
@@ -78,9 +78,9 @@ python clippy_pet.py
 ## 🛠 打包成 exe
 
 ```bash
-python -m PyInstaller --noconfirm --clean ClippyPet-v0.2.3.spec
+python -m PyInstaller --noconfirm --clean ClippyPet-v0.2.4.spec
 ```
-- 产物：`dist/ClippyPet-v0.2.3.exe`（onefile，内嵌全部皮肤素材）
+- 产物：`dist/ClippyPet-v0.2.4.exe`（onefile，内嵌全部皮肤素材）
 - 生成图标：`python make_icon.py`（从 Clippy 第一帧生成 `clippy.ico`）
 - 打包后 `settings.json` 自动持久化到 exe 所在目录
 
@@ -93,7 +93,7 @@ clippy-pet/
 │   ├── skins/<皮肤>/        # 10 款皮肤：frames/*.png 精灵帧 + animations.json
 │   └── dl/skins/<皮肤>/     # 原始官方素材（agent.js + map.png）
 ├── extract_skins.py         # 皮肤素材提取脚本（从原始素材重建 skins/）
-├── ClippyPet-v0.2.3.spec   # PyInstaller 打包配置
+├── ClippyPet-v0.2.4.spec   # PyInstaller 打包配置
 ├── make_icon.py             # exe 图标生成脚本
 ├── launch.py                # 后台启动器（计划任务方式，避免被终端清理）
 ├── run_clippy-pet.bat        # 无控制台启动脚本（经计划任务）

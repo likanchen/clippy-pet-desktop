@@ -7,7 +7,7 @@ import sys
 
 BASE = os.path.dirname(os.path.abspath(__file__))
 sys.frozen = True
-sys.executable = os.path.join(BASE, "dist", "ClippyPet-v0.2.3.exe")
+sys.executable = os.path.join(BASE, "dist", "ClippyPet-v0.2.4.exe")
 # 模拟 onefile 解压目录（素材在其中）
 sys._MEIPASS = BASE
 

@@ -23,7 +23,7 @@ exe = EXE(
     a.binaries,
     a.datas,
     [],
-    name='ClippyPet-v0.2.3',
+    name='ClippyPet-v0.2.4',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
